@@ -4,17 +4,20 @@
 #include <algorithm>
 #include <SFML/Graphics.hpp>
 
-const int WIDTH = 800;
-const int HEIGHT = 400;
+const int WIDTH = 650;
+const int HEIGHT = 700;
 
-const int COLUMNS = 4;
+const int COLUMNS = 3;
 const int ROWS = 15;
+//const int COLUMNS = 4;
+//const int ROWS = 20;
 
-const int POPULATION = 50;
-const int TRIALS = 50;
+const int POPULATION = 80;
+const int TRIALS = 20;
 
-const int OFFSPRING_PER_GENERATION = 30;
-const int MUTATIONS = 5;
+const int OFFSPRING_PER_GENERATION = 60;
+//const int MUTATIONS = 5;
+const int MUTATIONS = 2;
 
 struct Neuron {
         Neuron* output[ROWS];
@@ -32,7 +35,7 @@ float targetFunction (float input) {
 }
 
 float activationFunction (float input) {
-    return std::max(tanh(input), (double)0);
+    return std::max((float)tanh(input), (float)0);
 }
 
 void swap(int *xp, int *yp) {
@@ -80,9 +83,10 @@ float simulate (float input) {
 }
 
 int main () {
-    sf::ContextSettings settings;
-    settings.antialiasingLevel = 8;
-    sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Neural Network", sf::Style::Default, settings);
+    //sf::ContextSettings settings;
+    //settings.antialiasingLevel = 8;
+    //sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Neural Network", sf::Style::Default, settings);
+    sf::RenderWindow window(sf::VideoMode(WIDTH, HEIGHT), "Neural Network");
     sf::Image plotImage;
 
     // Create neurons
@@ -96,7 +100,7 @@ int main () {
     //printf("\n");
 
     // Intialise connections
-    for (int i = 0; i < COLUMNS-1; i++) {
+    for (int i = 0; i < COLUMNS; i++) {
         for (int j = 0; j < ROWS; j++) {
             for (int k = 0; k < ROWS; k++) {
                 neurons[i][j]->weight[k] = 0;
@@ -111,12 +115,13 @@ int main () {
             for (int k = 0; k < ROWS; k++) {
                 for (int l = 0; l < ROWS; l++) {
                     genes[i][j][k][l] = (((float)rand() / (float)RAND_MAX)*2.0)-1.0;
+                    //genes[i][j][k][l] = 0.0;
                 }
             }
         }
     }
 
-    float last_loss = 0;
+    float last_loss = INFINITY;
     int generation = 0;
 
     int best_members[POPULATION] = {0};
@@ -139,50 +144,6 @@ int main () {
         for (int x = 0; x < WIDTH/2; x++) {
             int y = (HEIGHT*0.5)+(targetFunction((((float)x / (float)WIDTH)*4.0)-1.0)*HEIGHT*0.5);
             plotImage.setPixel(x, y, sf::Color(255,255,255,255));
-        }
-
-        // Create new offspring to replace worst members
-        for (int offspring = 0; offspring < OFFSPRING_PER_GENERATION; offspring++) {
-            // Choose random points to splice genes between
-            int crossover_low = (int)(((float)rand() / (float)RAND_MAX)*COLUMNS*ROWS*ROWS);
-            int crossover_high = crossover_low + (int)(((float)rand() / (float)RAND_MAX)*((COLUMNS*ROWS*ROWS) - crossover_low));
-
-            int parent_one = (int)(pow((float)rand() / (float)RAND_MAX, 2)*(float)(POPULATION-OFFSPRING_PER_GENERATION));
-            int parent_two = (int)(pow((float)rand() / (float)RAND_MAX, 2)*(float)(POPULATION-OFFSPRING_PER_GENERATION));
-
-            // Splice parent's genes to create offspring's genes
-            for (int i = crossover_low; i < crossover_high; i++) {
-                genes[best_members[POPULATION-offspring]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS] = genes[best_members[parent_one]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS];
-            }
-            for (int i = crossover_high; i >= crossover_low; i--) {
-                genes[best_members[POPULATION-offspring]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS] = genes[best_members[parent_two]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS];
-            }
-        }
-
-        // Add some tiny variations to the population
-        for (int population = 0; population < POPULATION; population++) {
-            for (int i = 0; i < COLUMNS-1; i++) {
-                for (int j = 0; j < ROWS; j++) {
-                    for (int k = 0; k < ROWS; k++) {
-                        genes[best_members[population]][i][j][k] += pow((((float)rand() / (float)RAND_MAX)*(float)1.8)-(float)0.9, 25);
-                    }
-                }
-            }
-        }
-
-        // Add a few larger mutations to the population biased towards worst in order to overcome local minima
-        for (int mutation = 0; mutation < MUTATIONS; mutation++) {
-            genes[best_members[POPULATION - (int)(pow((float)rand() / (float)RAND_MAX, 99)*(POPULATION))]][(int)(((float)rand() / (float)RAND_MAX)*(COLUMNS-1))][(int)(((float)rand() / (float)RAND_MAX)*ROWS)][(int)(((float)rand() / (float)RAND_MAX)*ROWS)] += pow((((float)rand() / (float)RAND_MAX)*(float)2.0)-(float)1.0, 15);
-        }
-
-        for (int population = 0; population < POPULATION; population++) {
-            for (int i = 0; i < COLUMNS-1; i++) {
-                for (int j = 0; j < ROWS; j++) {
-                    for (int k = 0; k < ROWS; k++) {
-                        genes[best_members[population]][i][j][k] = std::max(std::min(genes[population][i][j][k], (float)1), (float)-1);
-                    }
-                }
-            }
         }
 
         // Simulate every member of population
@@ -221,7 +182,8 @@ int main () {
             }
         }
 
-        // Redraw screen for every generation
+        // Redraw screen
+        //if (losses[0] < last_loss) {
         if (true) {
             printf("%i - ", generation);
             printf("Best member: %i\t", best_members[0]);
@@ -306,6 +268,55 @@ int main () {
             window.display();
 
             last_loss = losses[0];
+        }
+
+        // Create new offspring to replace worst members
+        for (int offspring = 0; offspring < OFFSPRING_PER_GENERATION; offspring++) {
+            // Choose random points to splice genes between
+            int crossover_low = (int)(((float)rand() / (float)RAND_MAX)*COLUMNS*ROWS*ROWS);
+            int crossover_high = crossover_low + (int)(((float)rand() / (float)RAND_MAX)*((COLUMNS*ROWS*ROWS) - crossover_low));
+
+            // Choose parents, biased towards best
+            int parent_one = (int)(pow((float)rand() / (float)RAND_MAX, 2)*(float)(POPULATION-OFFSPRING_PER_GENERATION));
+            int parent_two = (int)(pow((float)rand() / (float)RAND_MAX, 2)*(float)(POPULATION-OFFSPRING_PER_GENERATION));
+
+            // Splice parent's genes to create offspring's genes
+            for (int i = 0; i < crossover_low; i++) {
+                genes[best_members[POPULATION-offspring-1]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS] = genes[best_members[parent_two]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS];
+            }
+            for (int i = crossover_low; i < crossover_high; i++) {
+                genes[best_members[POPULATION-offspring-1]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS] = genes[best_members[parent_one]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS];
+            }
+            for (int i = crossover_high; i < COLUMNS*ROWS*ROWS; i++) {
+                genes[best_members[POPULATION-offspring-1]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS] = genes[best_members[parent_two]][((i % ROWS)%ROWS)%COLUMNS][(i % ROWS)%ROWS][i % ROWS];
+            }
+        }
+        
+        // Add some tiny variations to the population
+        for (int population = 0; population < POPULATION; population++) {
+            for (int i = 0; i < COLUMNS-1; i++) {
+                for (int j = 0; j < ROWS; j++) {
+                    for (int k = 0; k < ROWS; k++) {
+                        genes[best_members[population]][i][j][k] += pow((((float)rand() / (float)RAND_MAX)*(float)1.0)-(float)0.5, 7);
+                    }
+                }
+            }
+        }
+
+        // Add a few larger mutations to the population biased towards worst in order to overcome local minima, don't touch best
+        for (int mutation = 0; mutation < MUTATIONS; mutation++) {
+            genes[best_members[POPULATION-1-(int)(pow((float)rand() / (float)RAND_MAX, 15)*(POPULATION-1))]][(int)(((float)rand() / (float)RAND_MAX)*(COLUMNS-1))][(int)(((float)rand() / (float)RAND_MAX)*ROWS)][(int)(((float)rand() / (float)RAND_MAX)*ROWS)] += pow((((float)rand() / (float)RAND_MAX)*(float)1.8)-(float)0.9, 5);
+        }
+
+        // Make sure weights are within range
+        for (int population = 0; population < POPULATION; population++) {
+            for (int i = 0; i < COLUMNS-1; i++) {
+                for (int j = 0; j < ROWS; j++) {
+                    for (int k = 0; k < ROWS; k++) {
+                        genes[best_members[population]][i][j][k] = std::max(std::min(genes[population][i][j][k], (float)1), (float)-1);
+                    }
+                }
+            }
         }
 
         generation += 1;
