@@ -3,7 +3,7 @@
 src=$(wildcard *.cpp)
 obj=$(src:.cpp=.o)
 
-all: raytracer.bin clean
+all: main.bin clean
 
 run: all
 	./main.bin
@@ -14,6 +14,6 @@ clean:
 %.o: %.cpp
 	g++ -c $< -o $@
 
-raytracer.bin: $(obj)
+main.bin: $(obj)
 	g++ $(obj) -o main.bin -std=c++11 -lsfml-graphics -lsfml-window -lsfml-system
 
